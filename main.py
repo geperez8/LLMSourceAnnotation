@@ -52,35 +52,81 @@ context = st.text_area("What is the header of your article?", value="", height=N
 src_text = st.text_area("What is the text for your source?", value="", height=None, max_chars=None, key=None, help=None, on_change=None, args=None, kwargs=None, placeholder=None, disabled=False, label_visibility="visible")
 
 # # create Prompt
-prompt = f"""
-I am writing an article titled:
+prompt = """Identify and extract the most newsworthy excerpts from a given document, providing 3-5 excerpts ranked in order of perceived newsworthiness. Each excerpt should be transcribed exactly as it appears in the source, without any modification.
 
-{context}
+Consider the relevance, significance, and impact of each segment when determining "newsworthiness." Focus on elements that are likely to attract media attention, have public interest, or convey important changes, events, or statements. 
 
-I am interested in using this document as a source in my article:
+# Steps
 
-{src_text}
+1. **Read Through the Full Document**: Gain an understanding of the document's context and main themes.
+2. **Identify Potential Excerpts**: Look for statements that are significant, surprising, publicly relevant, or convey critical information.
+3. **Select and Rank Excerpts**: Pick 3-5 excerpts that are the most noteworthy, assessing based on public interest or potential news impact. Rank them in order, from most to least newsworthy.
+4. **Preserve the Original Wording**: Ensure the excerpts are copied exactly as written in the original document to maintain their integrity.
 
-What parts of the document would go well with my article? Return it as just the quotes without any additional information. 
-Also give me your reasoning behind it. Give it to me as a JSON with a "quote" and "reason" key and make sure you do at least 5 quotes with reasoning. 
-Your purpose is to just return the JSON without any additional text; if the input is invalid, return a blank JSON, no additional comments, and make 
-the quotes one to one with the text. There shouldn't be any abbreviations in the quotes, shortening, or periods where they are not in the source text.
+# Output Format
 
-Return the response in JSON format as:
-{{
-    "quotes": [
-        {{"quote": "<quote>", "reason": "<reason>"}},
-        ...
-    ]
-}}
+The output should be in JSON format with the following structure:
+
+```json
+{
+  "excerpts": [
+    {
+      "rank": 1,
+      "excerpt": "[Full text of the most newsworthy excerpt]"
+    },
+    {
+      "rank": 2,
+      "excerpt": "[Full text of the second most newsworthy excerpt]"
+    },
+    {
+      "rank": 3,
+      "excerpt": "[Full text of the third most newsworthy excerpt]"
+    }
+    // Additional excerpts (rank 4 and 5) are optional
+  ]
+}
+```
+
+# Examples
+
+**Input Example:**
+"A new scientific report has confirmed significant changes in global weather patterns. In addition, government officials have announced ambitious new climate policies, which are expected to reduce carbon emissions by 50% by 2030. Meanwhile, protests have erupted in several cities opposing recent fuel price hikes, with reports of multiple arrests."
+
+**Output Example:**
+```json
+{
+  "excerpts": [
+    {
+      "rank": 1,
+      "excerpt": "Government officials have announced ambitious new climate policies, which are expected to reduce carbon emissions by 50% by 2030."
+    },
+    {
+      "rank": 2,
+      "excerpt": "Protests have erupted in several cities opposing recent fuel price hikes, with reports of multiple arrests."
+    },
+    {
+      "rank": 3,
+      "excerpt": "A new scientific report has confirmed significant changes in global weather patterns."
+    }
+  ]
+}
+```
+
+# Notes
+
+- Ensure that the excerpts are factually representative of the original text.
+- If the document lacks clearly newsworthy excerpts, select those with the greatest potential public interest.
+- Maintain impartiality in the ranking process, and base the decision solely on the impact value of each statement.
 """
 
-# Functions
-def run_ollama(prompt):
+
+
+def run_ollama(prompt, src_text):
     # Ollama Payload
     payload = {
         "model": "llama3.1:8b",
-        "prompt": prompt,
+        "system": prompt,
+        "prompt": src_text,
         "stream": False
     }
 
@@ -179,9 +225,11 @@ if st.button("Generate Text"):
     else:
         error = ''
         if is_local == True:
-            response = run_ollama(prompt)
+            response = run_ollama(prompt, src_text)
         else:
             response = run_gpt(prompt)
-        # print(response, "\n\n")
+        st.write(f"{response}")
         st.json(response)
         annotate_text_with_quotes(src_text, response["quotes"])
+
+    
