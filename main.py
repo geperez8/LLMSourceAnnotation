@@ -42,8 +42,6 @@ ollama_schema = {
     ]
 }
 
-is_local = False
-
 # Streamlit App
 st.title("LLM Document Annotation Demo")
 
@@ -188,8 +186,8 @@ def annotate_text_with_quotes(src_text, quotes):
 
     # Loop through each quote to find and annotate it in the source text
     for item in quotes:
-        quote = item["quote"]
-        reason = item["reason"]
+        quote = item["excerpt"]
+        ranking = item["rank"]
         
         # Search for quote in source text
         match = re.search(re.escape(quote), src_text)
@@ -201,7 +199,7 @@ def annotate_text_with_quotes(src_text, quotes):
                 annotations.append(src_text[last_index:start])
             
             # Add matched quote as annotated text
-            annotations.append((src_text[start:end], "quote"))
+            annotations.append((src_text[start:end], str(ranking)))
 
             # Update last index to end of match
             last_index = end
@@ -218,6 +216,8 @@ error = ""
 
 st.write(f"{error}")
 
+is_local = st.checkbox("Local LLM")
+
 if st.button("Generate Text"):
 
     if context == "" or src_text == "":
@@ -228,8 +228,24 @@ if st.button("Generate Text"):
             response = run_ollama(prompt, src_text)
         else:
             response = run_gpt(prompt)
-        st.write(f"{response}")
-        st.json(response)
-        annotate_text_with_quotes(src_text, response["quotes"])
+
+        # Extract the JSON content using regex
+        json_match = re.search(r'```json\n(.*?)\n```', response, re.DOTALL)
+        
+        if json_match:
+            json_content = json_match.group(1)
+            try:
+                # Parse the extracted JSON content
+                response_json = json.loads(json_content)
+                st.write("Extracted JSON:")
+                st.json(response_json)
+
+                # Display the annotated text with quotes
+                annotate_text_with_quotes(src_text, response_json["excerpts"])
+                
+            except json.JSONDecodeError:
+                st.write("Error: Could not parse JSON content.")
+        else:
+            st.write("Error: JSON content not found in the response.")
 
     
