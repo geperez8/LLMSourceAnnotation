@@ -3,4 +3,4 @@ streamlit
 python-dotenv
 requests
 pydantic
-streamlit-annotated-text
+st-annotated-text
