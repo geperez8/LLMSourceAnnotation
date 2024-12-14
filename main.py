@@ -131,6 +131,7 @@ The output should be in JSON format with the following structure:
 - Ensure that the excerpts are factually representative of the original text.
 - If the document lacks clearly newsworthy excerpts, select those with the greatest potential public interest.
 - Maintain impartiality in the ranking process, and base the decision solely on the impact value of each statement.
+- Do not escape quoation marks with a backslash (\) in the excerpts.
 """
 
 
@@ -237,8 +238,6 @@ if st.button("Generate Text"):
             
         else:
             response_json = run_gpt(prompt)
-
-
 
         # Display the annotated text with quotes
         annotate_text_with_quotes(src_text, response_json["excerpts"])
