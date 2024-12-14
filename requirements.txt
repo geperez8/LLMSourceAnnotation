@@ -1,0 +1,6 @@
+openai
+streamlit
+python-dotenv
+requests
+pydantic
+streamlit-annotated-text
