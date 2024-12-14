@@ -144,20 +144,15 @@ def run_ollama(prompt, src_text):
         "stream": False
     }
 
-    print("\nGenerating text...")
-
     # send the request to Ollama's API
     response = requests.post(OLLAMA_API_URL, json=payload)
 
     # check if the request was successful
     if response.status_code == 200:
         result = response.json()
-        print("\nGenerated text:")
-        print(result["response"])
         return result["response"]
     else:
         print(f"\nError: {response.status_code}")
-        print(response.text)
         return f"\nError: {response.status_code}"
     
 
@@ -167,7 +162,7 @@ def run_gpt(prompt):
         messages=[
             {
                 "role": "user",
-                "content": prompt,
+                "content": f"{prompt}\n\nAnalyze this text:\n{src_text}",
             }
         ],
         model="gpt-4o",
@@ -176,13 +171,9 @@ def run_gpt(prompt):
 
     event = chat_completion.choices[0].message.parsed
     content = chat_completion.choices[0].message.content
-
-    print("Parsed is -----", event, "\n\n")
     
     # Convert response to a JSON object
     response_data = json.loads(content)
-
-    print(response_data, "\n\n")
         
     # Validate the JSON structure using Pydantic
     validated_response = GPTResponseModel(**response_data)
@@ -218,7 +209,6 @@ def annotate_text_with_quotes(src_text, quotes):
     if last_index < len(src_text):
         annotations.append(src_text[last_index:])
     
-    print(annotations)
     # Display annotated text using Streamlit
     annotated_text(*annotations)
 
